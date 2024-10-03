@@ -1,16 +1,26 @@
-import base64
 import streamlit as st
 import pandas as pd
-import spacy
-from word2number import w2n
+import re
 import io
+import base64
 
-# Attempt to load the SpaCy model
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    st.error("SpaCy model 'en_core_web_sm' not found. Please ensure it's installed.")
-    nlp = None  # Set nlp to None if model is not found
+# Function to extract information from email content
+def extract_email_info(email_content):
+    # Basic regex to extract sender, product requested, quantity, model, and serial number.
+    # Placeholder values for demonstration
+    sender = re.findall(r'From: (.+)', email_content)
+    product = re.findall(r'Product Requested: (.+)', email_content)
+    quantity = re.findall(r'Quantity: (\d+)', email_content)
+    model = re.findall(r'Model: (.+)', email_content)
+    serial = re.findall(r'Serial: (.+)', email_content)
+
+    return {
+        "Sender": sender[0] if sender else "Not found",
+        "Product Requested": product[0] if product else "Not found",
+        "Quantity": int(quantity[0]) if quantity else 0,
+        "Model": model[0] if model else "Not found",
+        "Serial": serial[0] if serial else "Not found",
+    }
 
 # Streamlit app starts here
 st.title("AI Email Interpreter for IT Parts")
@@ -24,19 +34,13 @@ if upload_choice == "Extract Data from Email":
     email_content = st.text_area("Paste the email content here:")
     
     if st.button("Extract Data"):
-        if nlp is not None:
-            doc = nlp(email_content)
-            extracted_data = {
-                "Sender": "example@example.com",  # Placeholder
-                "Product Requested": "battery",    # Placeholder
-                "Quantity": 1,                     # Placeholder
-                "Model": "XYZ-123",                # Placeholder
-                "Serial": "SN-456",                # Placeholder
-            }
+        if email_content:
+            extracted_data = extract_email_info(email_content)
             st.success("Data extracted successfully!")
             st.json(extracted_data)
+
         else:
-            st.warning("NLP processing is not available without the SpaCy model.")
+            st.warning("Please enter email content.")
 
 elif upload_choice == "Download Results":
     # Logic for downloading results as CSV
@@ -54,6 +58,4 @@ elif upload_choice == "Download Results":
     href = f'<a href="data:file/csv;base64,{b64}" download="results.csv">Download Results</a>'
     st.markdown(href, unsafe_allow_html=True)
 
-# Run the app
-if __name__ == "__main__":
-    st.run()
+# Note: No need for `st.run()` in Streamlit script; simply put your logic at the top level.
